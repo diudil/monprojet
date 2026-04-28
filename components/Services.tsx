@@ -1,6 +1,65 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useRef } from "react";
+import {
+  motion,
+  useMotionValue,
+  useTransform,
+  useSpring,
+} from "framer-motion";
+
+function TiltCard({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className: string;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const rotateX = useTransform(y, [-80, 80], [5, -5]);
+  const rotateY = useTransform(x, [-80, 80], [-5, 5]);
+  const rotateXSpring = useSpring(rotateX, { stiffness: 350, damping: 30 });
+  const rotateYSpring = useSpring(rotateY, { stiffness: 350, damping: 30 });
+
+  const glowX = useTransform(x, [-80, 80], [0, 100]);
+  const glowY = useTransform(y, [-80, 80], [0, 100]);
+
+  const handleMove = (e: React.MouseEvent) => {
+    const rect = ref.current!.getBoundingClientRect();
+    x.set(e.clientX - (rect.left + rect.width / 2));
+    y.set(e.clientY - (rect.top + rect.height / 2));
+  };
+  const handleLeave = () => { x.set(0); y.set(0); };
+
+  return (
+    <motion.div
+      ref={ref}
+      style={{
+        rotateX: rotateXSpring,
+        rotateY: rotateYSpring,
+        transformStyle: "preserve-3d",
+      }}
+      onMouseMove={handleMove}
+      onMouseLeave={handleLeave}
+      className={className}
+    >
+      {/* Mouse-follow shimmer */}
+      <motion.div
+        style={{
+          background: useTransform(
+            [glowX, glowY],
+            ([gx, gy]) =>
+              `radial-gradient(circle at ${gx}% ${gy}%, rgba(202,138,4,0.07) 0%, transparent 60%)`
+          ),
+        }}
+        className="absolute inset-0 pointer-events-none rounded-none"
+      />
+      {children}
+    </motion.div>
+  );
+}
 
 const services = [
   {
@@ -111,7 +170,10 @@ export default function Services() {
         </motion.div>
 
         {/* Service grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-white/[0.05] rounded-xl overflow-hidden">
+        <div
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-white/[0.05] rounded-xl overflow-hidden"
+          style={{ perspective: "1200px" }}
+        >
           {services.map((service, i) => (
             <motion.div
               key={service.title}
@@ -120,12 +182,8 @@ export default function Services() {
               whileInView="visible"
               viewport={{ once: true, margin: "-50px" }}
               variants={cardVariants}
-              whileHover={{
-                backgroundColor: "rgba(202, 138, 4, 0.04)",
-                transition: { duration: 0.2 },
-              }}
-              className="relative group p-8 bg-[#0C0A09] cursor-default transition-colors duration-300"
             >
+            <TiltCard className="relative group p-8 bg-[#0C0A09] cursor-default h-full hover:bg-amber-600/[0.04] transition-colors duration-300">
               {/* Gold corner accent on hover */}
               <motion.div
                 initial={{ scaleX: 0 }}
@@ -156,6 +214,7 @@ export default function Services() {
                   <path d="M3 8h10M9 4l4 4-4 4" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
+            </TiltCard>
             </motion.div>
           ))}
         </div>

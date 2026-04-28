@@ -1,6 +1,52 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useRef } from "react";
+import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
+
+function ParallaxCard({
+  children,
+  className,
+  style,
+}: {
+  children: React.ReactNode;
+  className: string;
+  style?: React.CSSProperties;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const xSpring = useSpring(x, { stiffness: 200, damping: 25 });
+  const ySpring = useSpring(y, { stiffness: 200, damping: 25 });
+  const rotateX = useTransform(ySpring, [-80, 80], [4, -4]);
+  const rotateY = useTransform(xSpring, [-80, 80], [-4, 4]);
+  const bgX = useTransform(xSpring, [-80, 80], ["-4%", "4%"]);
+  const bgY = useTransform(ySpring, [-80, 80], ["-4%", "4%"]);
+
+  const handleMove = (e: React.MouseEvent) => {
+    const rect = ref.current!.getBoundingClientRect();
+    x.set(e.clientX - (rect.left + rect.width / 2));
+    y.set(e.clientY - (rect.top + rect.height / 2));
+  };
+  const handleLeave = () => { x.set(0); y.set(0); };
+
+  return (
+    <motion.div
+      ref={ref}
+      style={{ rotateX, rotateY, transformStyle: "preserve-3d", ...style }}
+      onMouseMove={handleMove}
+      onMouseLeave={handleLeave}
+      className={className}
+    >
+      {/* Parallax background layer */}
+      <motion.div
+        style={{ x: bgX, y: bgY, scale: 1.08 }}
+        className="absolute inset-0 pointer-events-none"
+        aria-hidden
+      />
+      {children}
+    </motion.div>
+  );
+}
 
 const cases = [
   {
@@ -71,19 +117,16 @@ export default function FeaturedWork() {
         </motion.div>
 
         {/* Cards grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5" style={{ perspective: "1400px" }}>
           {cases.map((item, i) => (
             <motion.div
               key={item.client}
               initial={{ opacity: 0, y: 50 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: 0.8,
-                delay: i * 0.15,
-                ease: [0.22, 1, 0.36, 1],
-              }}
+              transition={{ duration: 0.8, delay: i * 0.15, ease: [0.22, 1, 0.36, 1] }}
               viewport={{ once: true }}
-              whileHover={{ y: -6 }}
+            >
+            <ParallaxCard
               className="group relative rounded-xl overflow-hidden cursor-pointer"
               style={{ aspectRatio: "3/4" }}
             >
@@ -157,6 +200,7 @@ export default function FeaturedWork() {
                   </motion.div>
                 </div>
               </div>
+            </ParallaxCard>
             </motion.div>
           ))}
         </div>

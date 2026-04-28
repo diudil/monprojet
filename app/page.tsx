@@ -1,3 +1,4 @@
+import Cursor from "@/components/Cursor";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import LogoBanner from "@/components/LogoBanner";
@@ -12,6 +13,7 @@ import Footer from "@/components/Footer";
 export default function Home() {
   return (
     <main>
+      <Cursor />
       <Navbar />
       <Hero />
       <LogoBanner />
